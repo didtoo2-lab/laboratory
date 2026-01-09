@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SECTOR 7 : CLASSIFIED DATABASE</title>
+    <style>
+        /* [CORE DESIGN: VER 7.0 (Full Dossier)] */
+        :root {
+            --bg-color: #050505;
+            --neon-green: #00ff41; 
+            --neon-dim: #008f11;
+            --neon-red: #ff3333;   
+            --neon-yellow: #ffcc00;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--neon-green);
+            font-family: 'Consolas', 'Courier New', monospace;
+            margin: 0; padding: 0;
+            overflow-x: hidden; line-height: 1.6;
+        }
+
+        /* [인트로 & 애니메이션] */
+        #intro-screen {
+            position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+            background-color: #000; z-index: 9999;
+            display: flex; flex-direction: column; justify-content: center; align-items: center;
+            padding: 20px; box-sizing: border-box;
+        }
+        #intro-log { width: 100%; max-width: 600px; font-size: 1rem; color: var(--neon-green); white-space: pre-wrap; }
+        .cursor { display: inline-block; width: 10px; height: 1.2em; background-color: var(--neon-green); animation: blink 0.5s infinite; vertical-align: bottom; }
+        
+        #main-content { display: none; padding: 20px; max-width: 1000px; margin: 0 auto; animation: fadeIn 2s forwards; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* [텍스트 & 박스 효과] */
+        .glow-text { text-shadow: 0 0 5px var(--neon-green); }
+        .glow-red { color: var(--neon-red); text-shadow: 0 0 5px var(--neon-red); }
+        .glow-yellow { color: var(--neon-yellow); text-shadow: 0 0 5px var(--neon-yellow); }
+
+        .glow-box {
+            box-shadow: 0 0 10px var(--neon-green), inset 0 0 10px var(--neon-dim);
+            border: 1px solid var(--neon-green);
+            background: rgba(0, 20, 0, 0.6);
+            padding: 20px; margin-bottom: 25px; transition: 0.3s;
+        }
+        .glow-box:hover { background: rgba(0, 30, 0, 0.8); box-shadow: 0 0 20px var(--neon-green); }
+
+        /* [프로필 카드 공통 스타일 (소장 & 실험체)] */
+        .profile-card {
+            display: flex; gap: 20px; align-items: flex-start;
+        }
+        /* 소장용 레드 테두리 */
+        .admin-card { border-color: var(--neon-red); box-shadow: 0 0 10px var(--neon-red), inset 0 0 10px rgba(100, 0, 0, 0.5); }
+        .admin-card:hover { box-shadow: 0 0 25px var(--neon-red), inset 0 0 20px rgba(100, 0, 0, 0.5); }
+
+        /* 실험체용 그린 테두리 (이제 큼직하게!) */
+        .subject-card { border-color: var(--neon-green); }
+
+        /* [사진 박스] */
+        .photo-box {
+            width: 200px; height: 250px; background-color: #000; border: 1px dashed var(--neon-dim);
+            display: flex; align-items: center; justify-content: center; color: #555;
+            font-size: 0.8rem; overflow: hidden; flex-shrink: 0;
+        }
+        .admin-photo { border-color: var(--neon-red); }
+        .photo-box img { width: 100%; height: 100%; object-fit: cover; }
+
+        /* [테이블 & 리포트] */
+        .spec-table { width: 100%; border-collapse: collapse; font-size: 0.9rem; margin-bottom: 15px; }
+        .spec-table th { text-align: left; color: var(--neon-dim); border-bottom: 1px solid #333; padding: 5px; width: 30%; }
+        .spec-table td { color: #fff; border-bottom: 1px solid #333; padding: 5px; }
+        .spec-table.red-theme th { color: var(--neon-red); }
+
+        .report-log { font-size: 0.85rem; color: #ccc; border-top: 1px dashed #444; padding-top: 15px; margin-top: 10px; }
+        .report-label { display: block; margin-bottom: 5px; font-weight: bold; color: var(--neon-green); }
+        .report-label.red { color: var(--neon-red); }
+
+        /* [몬스터 그리드] */
+        .grid-col-2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; }
+
+        /* [기타 UI] */
+        @keyframes blink { 0% { opacity: 1; } 50% { opacity: 0; } 100% { opacity: 1; } }
+        .blink { animation: blink 1s infinite; }
+        .scanlines {
+            position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
+            background-size: 100% 3px, 6px 100%; pointer-events: none; z-index: 100; opacity: 0.5;
+        }
+
+        header { text-align: center; margin-bottom: 40px; border-bottom: 2px solid var(--neon-green); padding-bottom: 20px; }
+        .main-title { font-size: 3rem; letter-spacing: 5px; margin: 0; word-break: break-all; }
+        h2 { border-left: 5px solid var(--neon-green); padding-left: 15px; margin-bottom: 25px; text-transform: uppercase; font-size: 1.5rem; }
+
+        .monitor-frame {
+            background-color: #000; padding: 15px; height: 200px; overflow-y: scroll;
+            border: 1px solid var(--neon-green); box-shadow: 0 0 15px rgba(0, 255, 65, 0.2); font-size: 0.9rem;
+        }
+        .monitor-frame::-webkit-scrollbar { display: none; }
+        .log-entry { border-bottom: 1px solid #111; padding: 4px 0; }
+
+        .desc-text { font-size: 0.9rem; color: #ddd; margin-top: 10px; }
+        .highlight { color: #ffff00; font-weight: bold; }
+
+        /* 모바일 대응 */
+        @media (max-width: 768px) {
+            body { padding: 0; }
+            .container { padding: 15px; }
+            .main-title { font-size: 2rem; }
+            .grid-col-2 { grid-template-columns: 1fr; }
+            /* 모바일에서는 카드가 세로로 길어지게 */
+            .profile-card { flex-direction: column; align-items: center; }
+            .photo-box { width: 100%; max-width: 300px; height: 300px; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="scanlines"></div>
+
+    <div id="intro-screen" onclick="skipIntro()">
+        <div id="intro-log"></div>
+        <div class="cursor"></div>
+        <div style="margin-top:20px; font-size:0.8rem; color:#555; animation: blink 2s infinite;">
+            [ SYSTEM LOADING... TOUCH TO SKIP ]
+        </div>
+    </div>
+
+    <div id="main-content">
+        <div class="container">
+            <header>
+                <h1 class="main-title glow-text">SECTOR 7</h1>
+                <div class="blink glow-red" style="font-size: 0.9rem; margin-top: 5px;">⚠ UNAUTHORIZED BIO-HAZARD DETECTED ⚠</div>
+                <div style="font-size:0.7rem; margin-top:10px; color:#aaa;">
+                    ADMIN: <span style="color:#fff;">DIRECTOR SEO</span> | LOC: <span style="color:#fff;">CLASSIFIED_AREA_07</span> | STATUS: <span style="color:var(--neon-green)">ONLINE</span>
+                </div>
+            </header>
+
+            <section>
+                <h2 class="glow-text">🖥️ LIVE MONITOR</h2>
+                <div class="monitor-frame glow-box">
+                    <div class="log-entry" style="color:#ffff00;">[SYSTEM] 관리자(Director) 생체 인증 완료.</div>
+                    <div class="log-entry">[SYSTEM] 보안 등급 Level 5 승인.</div>
+                    <br>
+                    <div class="log-entry">서지훈 : ⚪ 모니터링 ▶ [관망중] 흥분</div>
+                    <div class="log-entry">카이엔 : 🔨 오거 ▶ [교미중] 기절 <span class="glow-red blink">(!CRITICAL)</span></div>
+                    <div class="log-entry">유진 : 🐍 바실리스크 ▶ [산란중] 만삭</div>
+                    <div class="log-entry">렌야 : 🐺 헬하운드 ▶ [결착중] 경직</div>
+                    <div class="log-entry">SYSTEM : 가스 살포 (진행률 80%)...</div>
+                    <div class="log-entry blink">>> WAITING FOR COMMAND_</div>
+                </div>
+            </section>
+
+            <section>
+                <h2 class="glow-red" style="border-color: var(--neon-red);">👤 ADMINISTRATOR</h2>
+                <div class="glow-box profile-card admin-card">
+                    <div class="photo-box admin-photo">
+                        [IMG: DIRECTOR]
+                    </div>
+                    <div style="flex: 1; width: 100%;">
+                        <h3 style="margin-top:0; color:var(--neon-red); font-size: 1.5rem;">서지훈 (Director)</h3>
+                        <table class="spec-table red-theme">
+                            <tr><th>AGE / SEX</th><td>32세 / 남성</td></tr>
+                            <tr><th>HEIGHT</th><td>182cm</td></tr>
+                            <tr><th>TRAIT</th><td>혼돈 악 / ENTP</td></tr>
+                            <tr><th>ROLE</th><td>제7구역 총괄 소장</td></tr>
+                        </table>
+                        <div class="report-log">
+                            <span class="report-label red">[PSYCHOLOGICAL EVALUATION]</span>
+                            "인류 구원"이라는 대의명분에는 관심이 전무함. 타인의 고통과 수치심을 오락거리로 소비하는 쾌락주의자. 특히 건장한 남성이 이종족에게 유린당하는 상황에서 극도의 성적 고양감을 느낌. (위험도: 측정 불가)
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section>
+                <h2 class="glow-text">📂 SUBJECT DOSSIERS</h2>
+                
+                <div class="glow-box profile-card subject-card">
+                    <div class="photo-box">[IMG: CAYENNE]</div>
+                    <div style="flex: 1; width: 100%;">
+                        <h3 style="margin-top:0;">NO. 001 카이엔</h3>
+                        <table class="spec-table">
+                            <tr><th>ORIGIN</th><td>왕국 성기사단장 (Captured)</td></tr>
+                            <tr><th>BODY</th><td>190cm / 88kg / 근육질</td></tr>
+                            <tr><th>TRAIT</th><td>패배중독 / 고결함(위장)</td></tr>
+                            <tr><th>STATUS</th><td>굴복 완료</td></tr>
+                        </table>
+                        <div class="report-log">
+                            <span class="report-label">[OBSERVATION LOG]</span>
+                            표면적으론 고결한 기사의 태도를 유지하나, 심층 심리 분석 결과 '패배'와 '피지배'에 대한 강렬한 욕구가 확인됨. 마물에게 제압당해 "크윽, 죽여라!"라고 외치는 순간 도파민 수치가 최고조에 달함. 전형적인 마조히즘 성향.
+                        </div>
+                    </div>
+                </div>
+
+                <div class="glow-box profile-card subject-card">
+                    <div class="photo-box">[IMG: EUGENE]</div>
+                    <div style="flex: 1; width: 100%;">
+                        <h3 style="margin-top:0;">NO. 002 유진</h3>
+                        <table class="spec-table">
+                            <tr><th>ORIGIN</th><td>본 시설 수석 연구원 (Demoted)</td></tr>
+                            <tr><th>BODY</th><td>178cm / 68kg / 마름</td></tr>
+                            <tr><th>TRAIT</th><td>이행일치 / 독설가</td></tr>
+                            <tr><th>STATUS</th><td>인지 부조화</td></tr>
+                        </table>
+                        <div class="report-log">
+                            <span class="report-label">[OBSERVATION LOG]</span>
+                            "이 짐승 새끼들!"이라며 욕설을 뱉지만, 신체 개발도는 가장 높음. 과거 본인이 설계한 시스템에 의해 범해지는 아이러니한 상황. 입으로는 거부하지만 신체는 쾌락에 솔직하게 반응하는 '언행불일치(이행일치)' 표본.
+                        </div>
+                    </div>
+                </div>
+
+                <div class="glow-box profile-card subject-card">
+                    <div class="photo-box">[IMG: RENYA]</div>
+                    <div style="flex: 1; width: 100%;">
+                        <h3 style="margin-top:0;">NO. 003 렌야</h3>
+                        <table class="spec-table">
+                            <tr><th>ORIGIN</th><td>S급 용병 (Captured)</td></tr>
+                            <tr><th>BODY</th><td>181cm / 76kg / 잔근육</td></tr>
+                            <tr><th>TRAIT</th><td>야생성 / 반항아</td></tr>
+                            <tr><th>STATUS</th><td>상시 구속</td></tr>
+                        </table>
+                        <div class="report-log">
+                            <span class="report-label">[OBSERVATION LOG]</span>
+                            야생 짐승과 유사한 반항심을 보여 상시 구속구(Ball-Gag, Chain) 착용 중. 고통과 쾌락을 구분하지 못하는 신경 체계를 가짐. 거칠게 다룰수록 더 격렬한 반응을 보이며 순종적으로 변함. 내구도 우수.
+                        </div>
+                    </div>
+                </div>
+
+            </section>
+
+            <section>
+                <h2 class="glow-text">⚠️ BIOLOGICAL THREATS</h2>
+                
+                <div class="glow-box">
+                    <h3 style="margin-top:0; color:#ffff00; font-size:1.1rem;">[SYSTEM : FACILITY RULES]</h3>
+                    <ul class="desc-text" style="padding-left: 20px;">
+                        <li><strong>투명 감옥:</strong> 전 구역 통유리. 실험체 간 교미 장면 강제 시청.</li>
+                        <li><strong>초고속 배양:</strong> 호르몬 투여. <span class="highlight">24h(포유류)/6h(난생)</span> 내 강제 출산.</li>
+                        <li><strong>자원 회수:</strong> 실험체 생산 모유(Breast Milk) 전량 회수 및 판매.</li>
+                    </ul>
+                </div>
+
+                <div class="grid-col-2">
+                    <div class="glow-box" style="margin-bottom:0;">
+                        <strong style="font-size:1.1rem; color:var(--neon-red);">🔨 오거 (Ogre)</strong>
+                        <p class="desc-text">
+                            <strong>[유형: 물리적 파괴]</strong> 지능 지수 0. 오직 번식 본능만 존재. 윤활 없는 강제 삽입과 피스톤 운동으로 피실험체의 자궁 파열 임계치까지 밀어붙이는 무식한 내구도 테스트용 개체.
+                        </p>
+                    </div>
+                    <div class="glow-box" style="margin-bottom:0;">
+                        <strong style="font-size:1.1rem; color:var(--neon-red);">🐺 헬하운드 (Hellhound)</strong>
+                        <p class="desc-text">
+                            <strong>[유형: 생체 결속]</strong> 사정 직후 성기 뿌리가 팽창하는 <strong>'노팅(Knotting)'</strong> 현상 발생. 입구를 완벽히 봉쇄하여 한 방울의 정액도 유실되지 않도록 장시간 결착 상태 유지.
+                        </p>
+                    </div>
+                    <div class="glow-box" style="margin-bottom:0;">
+                        <strong style="font-size:1.1rem; color:var(--neon-red);">🐉 와이번 (Wyvern)</strong>
+                        <p class="desc-text">
+                            <strong>[유형: 고열/이물 삽입]</strong> 체온이 용암과 유사함. 액체가 아닌 <strong>'경질화된 알'</strong>을 직접 산란하므로, 피실험체의 골반이 강제로 확장되는 극한의 고통을 수반함.
+                        </p>
+                    </div>
+                    <div class="glow-box" style="margin-bottom:0;">
+                        <strong style="font-size:1.1rem; color:var(--neon-red);">🐍 바실리스크 (Basilisk)</strong>
+                        <p class="desc-text">
+                            <strong>[유형: 압박 질식]</strong> 전신을 으스러지도록 조이는 악력 보유. 한 번에 수십 개의 알을 낳는 <strong>'다산형(Multi-Birth)'</strong> 산란으로 복부를 물풍선처럼 팽창시킴.
+                        </p>
+                    </div>
+                    <div class="glow-box" style="margin-bottom:0;">
+                        <strong style="font-size:1.1rem; color:var(--neon-red);">💧 슬라임 (Slime)</strong>
+                        <p class="desc-text">
+                            <strong>[유형: 내부 침투]</strong> 형태 없는 점액질. 구멍뿐만 아니라 미세한 틈으로 침투하여 장기 사이사이를 직접 마사지함. 물리적 방어가 불가능한 내부 공략형.
+                        </p>
+                    </div>
+                    <div class="glow-box" style="margin-bottom:0;">
+                        <strong style="font-size:1.1rem; color:var(--neon-red);">👻 쉐이드 (Shade)</strong>
+                        <p class="desc-text">
+                            <strong>[유형: 신경 지배]</strong> 그림자를 통해 피실험체의 운동 신경을 탈취. 본인의 거부 의사와 무관하게 스스로 다리를 벌리고 허리를 흔들게 만드는 인지 부조화 유발.
+                        </p>
+                    </div>
+                </div>
+            </section>
+
+            <footer style="text-align: center; margin-top: 50px; font-size: 0.7rem; opacity: 0.5; padding-bottom: 20px;">
+                SECTOR 7 CLASSIFIED DATABASE // VER 7.0 (FINAL_BUILD)
+            </footer>
+        </div>
+    </div>
+
+    <script>
+        const logText = [
+            "INITIALIZING ENCRYPTED NETWORK...",
+            "CONNECTING TO ENCRYPTED_SERVER_NODE_X7...",
+            "BYPASSING SECURITY FIREWALL...",
+            "VERIFYING BIO-METRICS (ID: DIRECTOR_SEO)...",
+            "...",
+            "ACCESS GRANTED.",
+            "RETRIEVING SUBJECT DOSSIERS...",
+            "SYSTEM READY."
+        ];
+
+        const logContainer = document.getElementById("intro-log");
+        let lineIndex = 0;
+        let charIndex = 0;
+
+        function typeLog() {
+            if (lineIndex < logText.length) {
+                const currentLine = logText[lineIndex];
+                if (charIndex < currentLine.length) {
+                    logContainer.innerHTML += currentLine.charAt(charIndex);
+                    charIndex++;
+                    setTimeout(typeLog, 30);
+                } else {
+                    logContainer.innerHTML += "<br>";
+                    lineIndex++;
+                    charIndex = 0;
+                    setTimeout(typeLog, 300);
+                }
+            } else {
+                setTimeout(skipIntro, 800);
+            }
+        }
+
+        function skipIntro() {
+            const intro = document.getElementById("intro-screen");
+            const main = document.getElementById("main-content");
+
+            if(intro.style.display !== 'none') {
+                intro.style.display = 'none';
+                main.style.display = 'block';
+            }
+        }
+        window.onload = typeLog;
+    </script>
+</body>
+</html>
