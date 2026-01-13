@@ -19,6 +19,13 @@
             font-family: 'Consolas', 'Courier New', monospace;
             margin: 0; padding: 0;
             overflow-x: hidden; line-height: 1.6;
+            
+            /* [NEW] 배경 격자무늬 (Grid) 추가 */
+            background-image: 
+                linear-gradient(rgba(0, 255, 65, 0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(0, 255, 65, 0.03) 1px, transparent 1px);
+            background-size: 40px 40px; /* 격자 크기 */
+            background-attachment: fixed; /* 스크롤해도 배경 고정 */
         }
 
         /* [인트로 & 애니메이션] */
@@ -42,10 +49,10 @@
         .glow-box {
             box-shadow: 0 0 10px var(--neon-green), inset 0 0 10px var(--neon-dim);
             border: 1px solid var(--neon-green);
-            background: rgba(0, 20, 0, 0.6);
+            background: rgba(0, 20, 0, 0.85); /* 배경이 투명해서 글자가 겹치지 않게 불투명도 조절 */
             padding: 20px; margin-bottom: 25px; transition: 0.3s;
         }
-        .glow-box:hover { background: rgba(0, 30, 0, 0.8); box-shadow: 0 0 20px var(--neon-green); }
+        .glow-box:hover { background: rgba(0, 30, 0, 0.95); box-shadow: 0 0 20px var(--neon-green); }
 
         /* [프로필 카드] */
         .profile-card { display: flex; gap: 20px; align-items: flex-start; }
@@ -88,11 +95,27 @@
         .main-title { font-size: 3rem; letter-spacing: 5px; margin: 0; word-break: break-all; }
         h2 { border-left: 5px solid var(--neon-green); padding-left: 15px; margin-bottom: 25px; text-transform: uppercase; font-size: 1.5rem; }
 
+        /* [NEW] 라이브 모니터 스크롤바 디자인 (확실하게 보이게 수정) */
         .monitor-frame {
             background-color: #000; padding: 15px; height: 200px; overflow-y: scroll;
             border: 1px solid var(--neon-green); box-shadow: 0 0 15px rgba(0, 255, 65, 0.2); font-size: 0.9rem;
         }
-        .monitor-frame::-webkit-scrollbar { display: none; }
+        
+        /* 스크롤바 트랙(배경) */
+        .monitor-frame::-webkit-scrollbar { 
+            display: block; /* 강제로 보이게 함 */
+            width: 6px; 
+        }
+        /* 스크롤바 막대 */
+        .monitor-frame::-webkit-scrollbar-thumb { 
+            background: var(--neon-green); 
+            border-radius: 3px;
+        }
+        /* 스크롤바 트랙 색상 */
+        .monitor-frame::-webkit-scrollbar-track { 
+            background: #111; 
+        }
+
         .log-entry { border-bottom: 1px solid #111; padding: 4px 0; }
         .desc-text { font-size: 0.9rem; color: #ddd; margin-top: 10px; }
         .highlight { color: #ffff00; font-weight: bold; }
@@ -131,6 +154,7 @@
 
             <section>
                 <h2 class="glow-text">🖥️ LIVE MONITOR</h2>
+                <div style="font-size:0.7rem; color:#666; text-align:right; margin-bottom:5px;">▼ SCROLL TO VIEW LOGS ▼</div>
                 <div class="monitor-frame glow-box">
                     <div class="log-entry" style="color:#ffff00;">[SYSTEM] 관리자(Director) 생체 인증 완료.</div>
                     <div class="log-entry">[SYSTEM] 실험체 002, 003 프로필 업데이트 완료.</div>
@@ -140,6 +164,9 @@
                     <div class="log-entry">유진 : 🐍 바실리스크 ▶ [산란중] 오열</div>
                     <div class="log-entry">렌야 : 🐺 헬하운드 ▶ [결착중] 멍함</div>
                     <div class="log-entry">SYSTEM : 실험체 002 심박수 급증 (공포)...</div>
+                    <div class="log-entry">SYSTEM : 실험체 003 약물 투여 시간 경과...</div>
+                    <div class="log-entry">SYSTEM : 착유기 #4 압력 조절 필요...</div>
+                    <div class="log-entry">SYSTEM : 외부 침입 흔적 없음. 보안 양호.</div>
                     <div class="log-entry blink">>> WAITING FOR COMMAND_</div>
                 </div>
             </section>
@@ -267,7 +294,7 @@
             </section>
 
             <footer style="text-align: center; margin-top: 50px; font-size: 0.7rem; opacity: 0.5; padding-bottom: 20px;">
-                SECTOR 7 CLASSIFIED DATABASE // VER 7.1 (PROFILE_UPDATED)
+                SECTOR 7 CLASSIFIED DATABASE // made mas3
             </footer>
         </div>
     </div>
@@ -318,10 +345,3 @@
     </script>
 </body>
 </html>
-
-
-
-
-
-
-
